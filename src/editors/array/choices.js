@@ -1,10 +1,9 @@
-JSONEditor.defaults.editors.arraySelectize = JSONEditor.AbstractEditor.extend({
+JSONEditor.defaults.editors.arrayChoices = JSONEditor.AbstractEditor.extend({
   preBuild: function() {
     var self = this;
     this.enum_options = [];
     this.enum_values = [];
     this.enum_display = [];
-    var i;
 
     // Enum options enumerated
     if(this.schema.items.enum) {
@@ -29,29 +28,39 @@ JSONEditor.defaults.editors.arraySelectize = JSONEditor.AbstractEditor.extend({
       this.description = this.theme.getDescription(this.schema.description);
     }
 
-    this.input = this.theme.getSelectInput(this.enum_options);
-    this.input.setAttribute('multiple', 'multiple');
+    var is_enum = this.schema.items.enum && this.enum_options && this.enum_options.length > 0;
+    if (is_enum) {
+      this.input = this.theme.getSelectInput(this.enum_options);
+      this.input.setAttribute('multiple', 'multiple');
+    } else {
+      this.input = this.theme.getFormInputField('text');
+    }
     var group = this.theme.getFormControl(this.title, this.input, this.description);
 
     this.container.appendChild(group);
     this.container.appendChild(this.error_holder);
 
-    //apply global options to array selectize
-    var options = $extend({},JSONEditor.plugins.selectize);
-    if(this.schema.options && this.schema.options.selectize_options) options = $extend(options,this.schema.options.selectize_options);
-    window.jQuery(this.input).selectize($extend(options,
-      {
-        delimiter: ( options.delimiter === undefined ? false : options.delimiter),
-        createOnBlur: ( options.createOnBlur === undefined ? true : options.createOnBlur),
-        create: ( options.create === undefined ? true : options.create)
-      }));
+    //apply global options to array Choices
+    var options = $extend({},JSONEditor.plugins.choices);
+    if(this.schema.options && this.schema.options.choices_options) options = $extend(options,this.schema.options.choices_options);
+    this.choices = new window.Choices(this.input, $extend(options, {
+      removeItemButton: (options.removeItemButton === undefined ? true : options.removeItemButton),
+      duplicateItemsAllowed: (options.duplicateItemsAllowed === undefined ? !this.schema.uniqueItems : options.duplicateItemsAllowed),
+      editItems: (options.editItems === undefined ? !is_enum : options.editItems),
+      maxItemCount: (options.maxItemCount === undefined ? (this.schema.maxItems > 0 ? this.schema.maxItems : -1) : options.maxItemCount),
+      placeholder: (options.placeholder === undefined ? !is_enum : options.placeholder),
+      placeholderValue: (options.placeholderValue === undefined ? this.translate('choices_placeholder_text') : options.placeholderValue),
+    }));
   },
   postBuild: function() {
       this._super();
       var self = this;
-      this.input.selectize.on('change', function(event) {
-          self.refreshValue();
-          self.onChange(true);
+
+      this.input.addEventListener('change', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        self.refreshValue();
+        self.onChange(true);
       });
   },
   destroy: function() {
@@ -60,35 +69,38 @@ JSONEditor.defaults.editors.arraySelectize = JSONEditor.AbstractEditor.extend({
     if(this.description && this.description.parentNode) this.description.parentNode.removeChild(this.description);
     if(this.input && this.input.parentNode) this.input.parentNode.removeChild(this.input);
 
+    this.choices.destroy();
+    this.choices = null;
+
     this._super();
   },
   empty: function(hard) {},
   setValue: function(value, initial) {
-    var self = this;
     // Update the array's value, adding/removing rows when necessary
     value = value || [];
     if(!(Array.isArray(value))) value = [value];
 
-    this.input.selectize.clearOptions();
-    this.input.selectize.clear(true);
+    this.choices.clearStore();
 
+    // var choice_values;
     if (this.schema.items.enum && this.enum_options && this.enum_options.length > 0) {
       var titles = this.enum_titles || [];
-      this.enum_options.forEach(function(x, idx) {
-        self.input.selectize.addOption({ text: titles[idx] || x, value: x });
-      });
-    } else {
-      value.forEach(function(item) {
-        self.input.selectize.addOption({text: item, value: item});
-      });
+      var enum_options = this.enum_options;
+      if (!this.choices.config.duplicateItemsAllowed) {
+        enum_options = enum_options.filter(function(x) {
+          return !value.includes(x);
+        });
+      }
+      var choices_list = enum_options.map(function(x, idx) { return {value: x, label: titles[idx] || x}; });
+      this.choices.setChoices(choices_list, 'value', 'label');
     }
-    
-    this.input.selectize.setValue(value);
+
+    this.choices.setValue(value);
 
     this.refreshValue(initial);
   },
   refreshValue: function(force) {
-    this.value = this.input.selectize.getValue();
+    this.value = this.choices.getValue(true);
   },
   showValidationErrors: function(errors) {
     var self = this;
@@ -107,9 +119,7 @@ JSONEditor.defaults.editors.arraySelectize = JSONEditor.AbstractEditor.extend({
 
     // Show errors for this editor
     if(this.error_holder) {
-
       if(my_errors.length) {
-        var message = [];
         this.error_holder.innerHTML = '';
         this.error_holder.style.display = '';
         $each(my_errors, function(i,error) {

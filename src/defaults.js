@@ -17,17 +17,17 @@ JSONEditor.defaults.options.upload = function(type, file, cbs) {
 JSONEditor.defaults.translate = function(key, variables) {
   var lang = JSONEditor.defaults.languages[JSONEditor.defaults.language];
   if(!lang) throw "Unknown language "+JSONEditor.defaults.language;
-  
+
   var string = lang[key] || JSONEditor.defaults.languages[JSONEditor.defaults.default_language][key];
-  
+
   if(typeof string === "undefined") throw "Unknown translate string "+key;
-  
+
   if(variables) {
     for(var i=0; i<variables.length; i++) {
       string = string.replace(new RegExp('\\{\\{'+i+'}}','g'),variables[i]);
     }
   }
-  
+
   return string;
 };
 
@@ -212,6 +212,10 @@ JSONEditor.defaults.languages.en = {
     */
   button_move_up_title: "Move up",
   /**
+    * Title on Object Properties buttons
+    */
+  button_object_properties: "Object Properties",
+  /**
     * Title on Delete Row buttons
     * @variable This key takes one variable: The title of object to delete
     */
@@ -235,13 +239,19 @@ JSONEditor.defaults.languages.en = {
   /**
     * Title on Flatpickr clear buttons
     */
-  flatpickr_clear_button: "Clear"
+  flatpickr_clear_button: "Clear",
+  /**
+    * Choices input field placeholder text
+    */
+  choices_placeholder_text: "Start typing to add value",
 };
 
 // Miscellaneous Plugin Settings
 JSONEditor.plugins = {
   ace: {
     theme: ''
+  },
+  choices: {
   },
   SimpleMDE: {
 
@@ -250,7 +260,7 @@ JSONEditor.plugins = {
 
   },
   select2: {
-    
+
   },
   selectize: {
   }
@@ -280,10 +290,6 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.type === "string" && schema.format === "signature") return "signature";
 });
-// Use a specialized editor for ratings
-JSONEditor.defaults.resolvers.unshift(function(schema) {
-  if(schema.type === "integer" && schema.format === "rating") return "rating";
-});
 // Use the select editor for all boolean values
 JSONEditor.defaults.resolvers.unshift(function(schema) {
   if(schema.type === 'boolean') {
@@ -292,6 +298,9 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
       return "checkbox";
     }
     // Otherwise, default to select menu
+    if (window.Choices) {
+      return 'choices';
+    }
     return (JSONEditor.plugins.selectize.enable) ? 'selectize' : 'select';
   }
 });
@@ -322,7 +331,15 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 });
 // Use the `select` editor for dynamic enumSource enums
 JSONEditor.defaults.resolvers.unshift(function(schema) {
-  if(schema.enumSource) return (JSONEditor.plugins.selectize.enable) ? 'selectize' : 'select';
+  if(schema.enumSource) {
+    if(schema.format === "radio") {
+      return "radio";
+    }
+    if (window.Choices) {
+      return 'choices';
+    }
+    return (JSONEditor.plugins.selectize.enable) ? 'selectize' : 'select';
+  }
 });
 // Use the `enum` or `select` editors for schemas with enumerated properties
 JSONEditor.defaults.resolvers.unshift(function(schema) {
@@ -331,20 +348,33 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
       return "enum";
     }
     else if(schema.type === "number" || schema.type === "integer" || schema.type === "string") {
+
+      if(schema.format === "radio") {
+        return "radio";
+      }
+
+      if (window.Choices) {
+        return 'choices';
+      }
       return (JSONEditor.plugins.selectize.enable) ? 'selectize' : 'select';
     }
   }
 });
 // Specialized editors for arrays of strings
 JSONEditor.defaults.resolvers.unshift(function(schema) {
-  if(schema.type === "array" && schema.items && !(Array.isArray(schema.items)) && schema.uniqueItems && ['string','number','integer'].indexOf(schema.items.type) >= 0) {
-    // For enumerated strings, number, or integers
-    if(schema.items.enum) {
-      return 'multiselect';
+  if(schema.type === "array" && schema.items && !(Array.isArray(schema.items)) && ['string','number','integer'].indexOf(schema.items.type) >= 0) {
+    if (window.Choices) {
+      return 'arrayChoices';
     }
-    // For non-enumerated strings (tag editor)
-    else if(JSONEditor.plugins.selectize.enable && schema.items.type === "string") {
-      return 'arraySelectize';
+    if (schema.uniqueItems) {
+      // if 'selectize' enabled it is expected to be selectized control
+      if (JSONEditor.plugins.selectize.enable) {
+        return 'arraySelectize';
+      }
+      // otherwise it is select
+      else {
+        return 'multiselect';
+      }
     }
   }
 });
@@ -361,5 +391,20 @@ JSONEditor.defaults.resolvers.unshift(function(schema) {
 });
 // Use a specialized editor for starratings
 JSONEditor.defaults.resolvers.unshift(function(schema) {
-  if (schema.type === "string" && schema.format === "starrating") return "starrating";
+  if (['string', 'integer'].indexOf(schema.type) !== -1 && ['starrating', 'rating'].indexOf(schema.format) !== -1) return "starrating";
+});
+
+// hyper-link describeBy Resolver
+JSONEditor.defaults.resolvers.unshift(function(schema) {
+  if (schema.links) {
+    for (var i = 0; i < schema.links.length; i++) {
+      if (schema.links[i].rel.toLowerCase() === "describedby") {
+        return "describedBy";
+      }
+    }
+  }
+});
+// Enable custom editor type
+JSONEditor.defaults.resolvers.unshift(function(schema) {
+  if (schema.type === "string" && schema.format === "uuid") return "uuid";
 });

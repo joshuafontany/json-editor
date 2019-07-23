@@ -235,7 +235,8 @@ JSONEditor.AbstractTheme = Class.extend({
   },
   getDescription: function(text) {
     var el = document.createElement('p');
-    el.innerHTML = text;
+    if (window.DOMPurify) el.innerHTML = window.DOMPurify.sanitize(text);
+    else el.textContent = this.cleanText(text);
     return el;
   },
   getCheckboxDescription: function(text) {
@@ -450,5 +451,11 @@ JSONEditor.AbstractTheme = Class.extend({
   },
   getInputGroup: function(input, buttons) {
     return undefined;
+  },
+  cleanText: function(txt) {
+    // Clean out HTML tags from txt
+    var tmp = document.createElement('div');
+    tmp.innerHTML = txt;
+    return (tmp.textContent || tmp.innerText);
   }
 });

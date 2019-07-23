@@ -1,4 +1,4 @@
-JSONEditor.defaults.editors.starrating = JSONEditor.defaults.editors.string.extend({
+JSONEditor.defaults.editors.radio = JSONEditor.defaults.editors.string.extend({
   build: function () {
     var self = this;
 
@@ -7,18 +7,9 @@ JSONEditor.defaults.editors.starrating = JSONEditor.defaults.editors.string.exte
     if(this.options.infoText) this.infoButton = this.theme.getInfoButton(this.options.infoText);
     if(this.options.compact) this.container.classList.add('compact');
 
-    this.ratingContainer = document.createElement('div');
-    this.ratingContainer.classList.add('starrating');
+    this.radioContainer = document.createElement('div');
 
-    // Emulate the old "rating" editor parameters
-    if (this.schema.enum == undefined) {
-      var max = this.schema.maximum ? this.schema.maximum : 5;
-      if (this.schema.exclusiveMaximum) max--;
-      this.enum_values = [];
-      for (var k=0;k<max;k++) this.enum_values.push(k+1);
-    }
-    else this.enum_values = this.schema.enum;
-
+    this.enum_values = this.schema.enum;
     this.radioGroup = [];
 
     var radioInputEventhandler = function(e) {
@@ -28,63 +19,62 @@ JSONEditor.defaults.editors.starrating = JSONEditor.defaults.editors.string.exte
       self.onChange(true);
     };
 
-    for(var i = this.enum_values.length-1; i>-1; i--) {
+    for(var i = 0; i < this.enum_values.length; i++) {
 
-      var id = this.formname + (i+1);
+      var id = this.key + '-' + i;
 
       // form radio elements
       var radioInput = this.theme.getFormInputField('radio');
-      radioInput.name = this.formname + '[starrating]';
+      radioInput.name = this.formname;
       radioInput.value = this.enum_values[i];
       radioInput.id = id;
+      radioInput.classList.add('radio__field');
       radioInput.addEventListener('change', radioInputEventhandler, false);
       this.radioGroup.push(radioInput);
 
       // form-label for radio elements
       var radioLabel = document.createElement('label');
       radioLabel.htmlFor = id;
-      radioLabel.title = this.enum_values[i];
-      if(this.options.displayValue) {
-        radioLabel.classList.add('starrating-display-enabled');
-      }
+      radioLabel.classList.add('radio');
 
-      this.ratingContainer.appendChild(radioInput);
-      this.ratingContainer.appendChild(radioLabel);
+      // contains the displayed text to the label
+      var radioLabelText = document.createElement('span');
+      radioLabelText.innerText = this.enum_values[i];
+      radioLabelText.classList.add('radio__label');
 
-    }
+      // permits the addition of styles for the radio itself (if you want it to look differently than browser default)
+      var radioLabelIcon = document.createElement('span');
+      radioLabelIcon.classList.add('radio__icon');
 
-    if(this.options.displayValue) {
-      this.displayRating = document.createElement('div');
-      this.displayRating.classList.add('starrating-display');
-      this.displayRating.innerText = this.enum_values[0];
-      this.ratingContainer.appendChild(this.displayRating);
+      radioLabel.appendChild(radioInput);
+      radioLabel.appendChild(radioLabelIcon);
+      radioLabel.appendChild(radioLabelText);
+
+      this.radioContainer.appendChild(radioLabel);
     }
 
     if(this.schema.readOnly || this.schema.readonly) {
       this.always_disabled = true;
-      for (var j = 0; j<this.radioGroup.length; j++) {
+      for (var j = 0; j < this.radioGroup.length; j++) {
         this.radioGroup[j].disabled = true;
       }
-      this.ratingContainer.classList.add('readonly');
+      this.radioContainer.classList.add('readonly');
     }
 
-    var ratingsContainerWrapper = this.theme.getContainer();
-    ratingsContainerWrapper.appendChild(this.ratingContainer);
+    var radioContainerWrapper = this.theme.getContainer();
+    radioContainerWrapper.appendChild(this.radioContainer);
 
-    this.input = ratingsContainerWrapper;
-
-    this.control = this.theme.getFormControl(this.label, ratingsContainerWrapper, this.description, this.infoButton);
+    this.input = radioContainerWrapper;
+    
+    this.control = this.theme.getFormControl(this.label, radioContainerWrapper, this.description, this.infoButton);
     this.container.appendChild(this.control);
-
-    this.refreshValue();
-
   },
   enable: function() {
     if(!this.always_disabled) {
       for (var i = 0; i<this.radioGroup.length; i++) {
         this.radioGroup[i].disabled = false;
       }
-      this.ratingContainer.classList.remove('readonly');
+      this.radioContainer.classList.remove('readonly');
       this._super();
     }
   },
@@ -93,26 +83,17 @@ JSONEditor.defaults.editors.starrating = JSONEditor.defaults.editors.string.exte
     for (var i = 0; i<this.radioGroup.length; i++) {
       this.radioGroup[i].disabled = true;
     }
-    this.ratingContainer.classList.add('readonly');
+    this.radioContainer.classList.add('readonly');
     this._super();
   },
   destroy: function() {
-    if(this.ratingContainer.parentNode && this.ratingContainer.parentNode.parentNode) this.ratingContainer.parentNode.parentNode.removeChild(this.ratingContainer.parentNode);
+    if(this.radioContainer.parentNode && this.radioContainer.parentNode.parentNode) this.radioContainer.parentNode.parentNode.removeChild(this.radioContainer.parentNode);
     if(this.label && this.label.parentNode) this.label.parentNode.removeChild(this.label);
     if(this.description && this.description.parentNode) this.description.parentNode.removeChild(this.description);
     this._super();
   },
   getNumColumns: function() {
     return 2;
-  },
-  getValue: function() {
-    if (!this.dependenciesFulfilled) {
-      return undefined;
-    }
-    if (this.schema.type == 'integer') {
-      return this.value===''?undefined:this.value*1;
-    }
-    return this.value;
   },
   setValue: function (val) {
     for(var i = 0; i < this.radioGroup.length; i++) {
@@ -123,7 +104,7 @@ JSONEditor.defaults.editors.starrating = JSONEditor.defaults.editors.string.exte
         if(this.options.displayValue) {
           this.displayRating.innerHTML = this.value;
         }
-        this.onChange(true);
+        this.onChange();
         break;
       }
     }

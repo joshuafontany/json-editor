@@ -1,16 +1,18 @@
 JSON Editor
 ===========
 
-[![Build Status](https://travis-ci.org/json-editor/json-editor.svg?branch=master)](https://travis-ci.org/json-editor/json-editor)  
-Fork of the inactive [jdorn/json-editor](https://github.com/jdorn/json-editor) using the updated fork [json-editor/json-editor](https://github.com/json-editor/json-editor).  
+[![Build Status](https://travis-ci.org/json-editor/json-editor.svg?branch=master)](https://travis-ci.org/json-editor/json-editor)
+Fork of the inactive [jdorn/json-editor](https://github.com/jdorn/json-editor) using the updated fork [json-editor/json-editor](https://github.com/json-editor/json-editor).
 Some pull requests added from the original repo.
 
 ![JSON Schema -> HTML Editor -> JSON](./docs/images/jsoneditor.png)
 
-JSON Editor takes a JSON Schema and uses it to generate an HTML form.  
+JSON Editor takes a JSON Schema and uses it to generate an HTML form.
 It has full support for JSON Schema version 3 and 4 and can integrate with several popular CSS frameworks (bootstrap, foundation, and jQueryUI).
 
 Check out an interactive demo: https://json-editor.github.io/json-editor/
+
+Or the JSON-Editor Interactive Playground: https://pmk65.github.io/jedemov2/dist/demo.html
 
 Install
 -----------------
@@ -42,12 +44,14 @@ The following are not required, but can improve the style and usability of JSON 
 *  [SCEditor](http://www.sceditor.com/) for WYSIWYG editing of HTML or BBCode content
 *  [SimpleMDE](https://simplemde.com/) for editing of Markdown content
 *  [Ace Editor](http://ace.c9.io/) for editing code
+*  [Choices](https://github.com/jshjohnson/Choices) for nicer Select & Array boxes
 *  [Select2](http://ivaynberg.github.io/select2/) for nicer Select boxes
 *  [Selectize](https://selectize.github.io/selectize.js/) for nicer Select & Array boxes
 *  [Flatpickr](https://flatpickr.js.org/) lightweight and powerful datetime picker
 *  [Signature Pad](https://github.com/szimek/signature_pad) HTML5 canvas based smooth signature drawing
 *  [Cleave.js](https://github.com/nosir/cleave.js) for formatting your **&lt;input/&gt;** content while you are typing
 *  [math.js](http://mathjs.org/) for more accurate floating point math (multipleOf, divisibleBy, etc.)
+*  [DOMPurify](https://github.com/cure53/DOMPurify) DOM-only, super-fast, uber-tolerant XSS sanitizer. (If you want to use HTML format in titles/headers and descriptions.)
 
 Usage
 --------------
@@ -59,8 +63,11 @@ If you learn best by example, check these out:
 *  Advanced Usage Example - https://json-editor.github.io/json-editor/advanced.html
 *  CSS Integration Example - https://json-editor.github.io/json-editor/css_integration.html
 *  Base64 Editor Example (Muiltple Upload) - https://json-editor.github.io/json-editor/multiple_upload_base64.html
+*  Choices Editor Example - https://json-editor.github.io/json-editor/choices.html
 *  Cleave.js Editor Example - https://json-editor.github.io/json-editor/cleave.html
 *  Datetime Editor Example - https://json-editor.github.io/json-editor/datetime.html
+*  DescribedBy Hyperlink Editor Example - https://json-editor.github.io/json-editor/describedby.html
+*  Radio Button JSON Editor Example - https://json-editor.github.io/json-editor/radio.html
 *  Recursive JSON Editor Example - https://json-editor.github.io/json-editor/recursive.html
 *  Select2 Editor Example - https://json-editor.github.io/json-editor/select2.html
 *  Selectize Editor Example - https://json-editor.github.io/json-editor/selectize.html
@@ -109,6 +116,16 @@ Here are all the available options:
   <tr>
     <td>ajax</td>
     <td>If <code>true</code>, JSON Editor will load external URLs in <code>$ref</code> via ajax.</td>
+    <td><code>false</code></td>
+  </tr>
+  <tr>
+    <td>ajaxBase</td>
+    <td>Allows schema references to work either with or without cors; set to protocol://host:port when api is served by different host.</td>
+    <td><code></code></td>
+  </tr>
+  <tr>
+    <td>ajaxCredentials</td>
+    <td>If <code>true</code>, JSON Editor will make ajax call with [credentials](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/withCredentials).</td>
     <td><code>false</code></td>
   </tr>
   <tr>
@@ -217,6 +234,11 @@ Here are all the available options:
     <td>If <code>true</code>, only required properties will be included by default.</td>
     <td><code>false</code></td>
   </tr>
+  <tr>
+      <td>show_opt_in</td>
+      <td>If <code>true</code>, NON required properties will have an extra toggable checkbox near the title that determines if the value must be included or not in the editor´s value</td>
+      <td><code>false</code></td>
+    </tr>
   <tr>
     <td>prompt_before_delete</td>
     <td>If <code>true</code>, displays a dialog box with a confirmation message before node deletion.</td>
@@ -432,7 +454,7 @@ It's possible to create your own custom themes and/or icon libs as well.  Look a
 JSON Schema Support
 -----------------
 
-JSON Editor fully supports version 3 and 4 of the JSON Schema [core][core] and [validation][validation] specifications.  
+JSON Editor fully supports version 3 and 4 of the JSON Schema [core][core] and [validation][validation] specifications.
 Some of The [hyper-schema][hyper] specification is supported as well.
 
 [core]: http://json-schema.org/latest/json-schema-core.html
@@ -476,8 +498,8 @@ Self-referential $refs are supported.  Check out `examples/recursive.html` for u
 
 The `links` keyword from the hyper-schema specification can be used to add links to related documents.
 
-JSON Editor will use the `mediaType` property of the links to determine how best to display them.  
-Image, audio, and video links will display the media inline as well as providing a text link.  
+JSON Editor will use the `mediaType` property of the links to determine how best to display them.
+Image, audio, and video links will display the media inline as well as providing a text link.
 
 Here are a couple examples:
 
@@ -841,7 +863,8 @@ You can override this default by passing in a format:
 #### Objects
 
 The default object layout is one child editor per row.  The `grid` format will instead put multiple child editors per row.
-This can make the editor much more compact, but at a cost of not guaranteeing child editor order.
+This can make the editor much more compact, but at a cost of not guaranteeing child editor order. This format will stretch
+columns to fill gaps untill all the 12 columns are filled.
 
 ```json
 {
@@ -852,7 +875,50 @@ This can make the editor much more compact, but at a cost of not guaranteeing ch
   "format": "grid"
 }
 ```
-The `categories` format groups properties in top-tabbed panels, one for each object or array property plus one that groups all added or other types of properties.  
+
+The `grid-strict` format instead will respect columns sizes (no stretching) and properties order.
+It introduces the new `grid-break` property to breaks the current row leaving a 4 colums gap.
+
+```json
+{
+  "type": "object",
+  "format": "grid-strict",
+  "properties": {
+    "a": {
+      "title": "a",
+      "type": "string",
+      "options": {
+        "grid_columns": 4
+      }
+    },
+    "b": {
+      "title": "b",
+      "type": "string",
+      "options": {
+        "grid_columns": 4,
+        "grid_break": true
+      }
+    },
+    "c": {
+      "title": "c",
+      "type": "string",
+      "options": {
+        "grid_columns": 6
+      }
+    },
+    "d": {
+      "title": "d",
+      "type": "string",
+      "options": {
+        "grid_columns": 6
+      }
+    }
+  }
+}
+```
+
+
+The `categories` format groups properties in top-tabbed panels, one for each object or array property plus one that groups all added or other types of properties.
 Panel tabs titles came from object or array titles and for the grouping panel it defaults to "Basic", unless  `basicCategoryTitle` is defined.
 
 ```json
@@ -912,11 +978,63 @@ You can globally set the default options too if you want:
 ```js
 JSONEditor.defaults.editors.object.options.collapsed = true;
 ```
+InfoText
+------------------
+Using the option `infoText`, will create a info button, displaying the text you set, on hovering.
+
+```json
+{
+  "type": "string",
+  "title": "Name",
+  "options": {
+    "infoText": "Your full name"
+  }
+}
+```
 
 
 Dependencies
 ------------------
-Sometimes, it's necessary to have one field's value depend on another's.  
+Sometimes, it's necessary to have one field's value depend on another's.
+
+The dependency information is fetched from the dependencies field in the options field of the control. The `dependencies` field should be a map where the keys are the names of the fields depended on and the value is the expected value. The value may be an array to indicate multiple value possibilities. This uses the internal field value watch system to notify fields of changes in their dependencies.
+
+Here's an example schema:
+
+```json
+{
+  "title": "An object",
+  "type": "object",
+  "properties": {
+    "fieldOne": {
+      "title": "I should be changed to 'foo'",
+      "type": "string",
+      "enum": ["foo","bar"],
+      "default": "bar"
+    },
+    "depender1": {
+      "title": "I depend on fieldOne to be 'foo'",
+      "type": "string",
+      "enum": ["lorem","ipsum"],
+      "options": {
+        "dependencies": {
+          "fieldOne": "foo"
+        }
+      }
+    },
+    "depender2": {
+      "title": "I depend on fieldOne to be 'bar'",
+      "type": "string",
+      "enum": ["dolor", "sit"],
+      "options": {
+        "dependencies": {
+          "fieldOne": "bar"
+        }
+      }
+    }
+  }
+}
+```
 
 The `dependencies` keyword from the JSON Schema specification is not nearly flexible enough to handle most use cases,
 so JSON Editor introduces a couple custom keywords that help in this regard.
@@ -990,7 +1108,7 @@ JSON Editor uses a javascript template engine to accomplish this.  A barebones t
 *  markup
 *  mustache
 *  swig
-*  underscore
+*  underscore >=1.7 (since 1.4.0, see also [#332](https://github.com/json-editor/json-editor/pull/332))
 
 You can change the default by setting `JSONEditor.defaults.options.template` to one of the supported template engines:
 
@@ -1170,7 +1288,7 @@ All of the optional templates in the verbose form have the properties `item` and
 
 The `title` keyword of a schema is used to add user friendly headers to the editing UI.  Sometimes though, dynamic headers, which change based on other fields, are helpful.
 
-Consider the example of an array of children.  Without dynamic headers, the UI for the array elements would show `Child 1`, `Child 2`, etc..  
+Consider the example of an array of children.  Without dynamic headers, the UI for the array elements would show `Child 1`, `Child 2`, etc..
 It would be much nicer if the headers could be dynamic and incorporate information about the children, such as `1 - John (age 9)`, `2 - Sarah (age 11)`.
 
 To accomplish this, use the `headerTemplate` property.  All of the watched variables are passed into this template, along with the static title `title` (e.g. "Child"), the 0-based index `i0` (e.g. "0" and "1"), the 1-based index `i1`, and the field's value `self` (e.g. `{"name": "John", "age": 9}`).
@@ -1318,15 +1436,17 @@ The possibilities are endless.  Some ideas:
 *  Better editor for arrays of strings (tag editor)
 *  Canvas based image editor that produces Base64 data URLs
 
-Select2 & Selectize Support
+Choices, Select2 & Selectize Support
 ----------------
-Select2 support is enabled by default and will become active if the Select2 library is detected.
+JSON editor checks in order if Choices or Select2 is loaded and will use the detected library by default.
 
 Selectize support is enabled via the following snippet:
 ```js
 JSONEditor.plugins.selectize.enable = true;
 ```
 See the demo for an example of the `array` and `select` editor with Selectize support enabled.
+
+To disable Select2/Selectize for a single property, you can set the boolean option `disable_selectize` or `disable_select2` in the schema property options.
 
 Custom Validation
 ----------------

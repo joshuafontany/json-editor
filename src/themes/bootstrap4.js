@@ -5,8 +5,11 @@ JSONEditor.defaults.themes.bootstrap4 = JSONEditor.AbstractTheme.extend({
     //el.style.width = 'auto';
     return el;
   },
-  setGridColumnSize: function(el, size) {
-    el.classList.add("col-md-" + size);
+  setGridColumnSize: function(el,size, offset) {
+    el.classList.add('col-md-'+size);
+    if (offset) {
+      el.classList.add('offset-md-'+offset);
+    }
   },
   afterInputReady: function(input) {
     if (input.controlgroup) return;
@@ -65,7 +68,8 @@ JSONEditor.defaults.themes.bootstrap4 = JSONEditor.AbstractTheme.extend({
   getFormInputDescription: function(text) {
     var el = document.createElement("p");
     el.classList.add('form-text');
-    el.innerHTML = text;
+    if (window.DOMPurify) el.innerHTML = window.DOMPurify.sanitize(text);
+    else el.textContent = this.cleanText(text);
     return el;
   },
   getHeaderButtonHolder: function() {
@@ -117,7 +121,7 @@ JSONEditor.defaults.themes.bootstrap4 = JSONEditor.AbstractTheme.extend({
     el.innerHTML = "<div class='col-md-2' id='" + pName + "'><ul class='nav flex-column nav-pills'></ul></div><div class='tab-content col-md-10' id='" + pName + "'></div>";
     el.classList.add("row");
     return el;
-  },  
+  },
   addTab: function(holder, tab) {
     holder.children[0].children[0].appendChild(tab);
   },

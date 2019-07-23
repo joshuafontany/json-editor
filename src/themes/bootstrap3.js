@@ -5,8 +5,11 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
     //el.style.width = 'auto';
     return el;
   },
-  setGridColumnSize: function(el,size) {
+  setGridColumnSize: function(el,size, offset) {
     el.classList.add('col-md-'+size);
+    if (offset) {
+      el.classList.add('col-md-offset-'+offset);
+    }
   },
   afterInputReady: function(input) {
     if(input.controlgroup) return;
@@ -105,7 +108,8 @@ JSONEditor.defaults.themes.bootstrap3 = JSONEditor.AbstractTheme.extend({
   getFormInputDescription: function(text) {
     var el = document.createElement('p');
     el.classList.add('help-block');
-    el.innerHTML = text;
+    if (window.DOMPurify) el.innerHTML = window.DOMPurify.sanitize(text);
+    else el.textContent = this.cleanText(text);
     return el;
   },
   getHeaderButtonHolder: function() {

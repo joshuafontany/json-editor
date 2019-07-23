@@ -108,12 +108,13 @@ JSONEditor.defaults.editors.datetime = JSONEditor.defaults.editors.string.extend
           sec = this.zeroPad(dateObj.getSeconds()),
           date = [year, month, day].join('-'),
           time = [hour, min, sec].join(':'),
-          dateValue = date + ' ' + time;
+          dateValue = date + 'T' + time;
 
       if (this.schema.format == 'date') dateValue = date;
       else if (this.schema.format == 'time') dateValue = time;
 
       this.input.value = dateValue;
+      this.refreshValue();
       if (this.flatpickr) this.flatpickr.setDate(dateValue);
     }
   },

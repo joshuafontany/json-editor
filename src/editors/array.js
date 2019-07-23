@@ -41,14 +41,24 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       if(this.add_row_button) this.add_row_button.disabled = false;
       if(this.remove_all_rows_button) this.remove_all_rows_button.disabled = false;
       if(this.delete_last_row_button) this.delete_last_row_button.disabled = false;
+      if(this.copy_button) this.copy_button.disabled = false;
+      //if(this.toggle_button) this.toggle_button.disabled = false;
+      if(this.delete_button) this.delete_button.disabled = false;
+      if(this.moveup_button) this.moveup_button.disabled = false;
+      if(this.movedown_button) this.movedown_button.disabled = false;
 
       if(this.rows) {
         for(var i=0; i<this.rows.length; i++) {
           this.rows[i].enable();
 
+          if(this.rows[i].add_row_button) this.rows[i].add_row_button.disabled = false;
+          if(this.rows[i].remove_all_rows_button) this.rows[i].remove_all_rows_button.disabled = false;
+          if(this.rows[i].delete_last_row_button) this.rows[i].delete_last_row_button.disabled = false;
+          if(this.rows[i].copy_button) this.rows[i].copy_button.disabled = false;
+          //if(this.rows[i].toggle_button) this.rows[i].toggle_button.disabled = false;
+          if(this.rows[i].delete_button) this.rows[i].delete_button.disabled = false;
           if(this.rows[i].moveup_button) this.rows[i].moveup_button.disabled = false;
           if(this.rows[i].movedown_button) this.rows[i].movedown_button.disabled = false;
-          if(this.rows[i].delete_button) this.rows[i].delete_button.disabled = false;
         }
       }
       this._super();
@@ -59,14 +69,26 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
     if(this.add_row_button) this.add_row_button.disabled = true;
     if(this.remove_all_rows_button) this.remove_all_rows_button.disabled = true;
     if(this.delete_last_row_button) this.delete_last_row_button.disabled = true;
+    if(this.copy_button) this.copy_button.disabled = true;
+    //if(this.toggle_button) this.toggle_button.disabled = true;
+    if(this.delete_button) this.delete_button.disabled = true;
+    if(this.moveup_button) this.moveup_button.disabled = true;
+    if(this.movedown_button) this.movedown_button.disabled = true;
+
 
     if(this.rows) {
       for(var i=0; i<this.rows.length; i++) {
         this.rows[i].disable(always_disabled);
 
-        if(this.rows[i].moveup_button) this.rows[i].moveup_button.disabled = true;
-        if(this.rows[i].movedown_button) this.rows[i].movedown_button.disabled = true;
+        if(this.rows[i].add_row_button) this.rows[i].add_row_button.disabled = true;
+        if(this.rows[i].remove_all_rows_button) this.rows[i].remove_all_rows_button.disabled = true;
+        if(this.rows[i].delete_last_row_button) this.rows[i].delete_last_row_button.disabled = true;
+        if(this.rows[i].copy_button) this.rows[i].copy_button.disabled = true;
+        //if(this.rows[i].toggle_button) this.rows[i].toggle_button.disabled = true;
         if(this.rows[i].delete_button) this.rows[i].delete_button.disabled = true;
+        if(this.rows[i].moveup_button) this.rows[i].moveup_button.disabled = true;
+       if(this.rows[i].movedown_button) this.rows[i].movedown_button.disabled = true;
+
       }
     }
     this._super();
@@ -89,7 +111,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
     var self = this;
 
     if(!this.options.compact) {
-      this.header = document.createElement('span');
+      this.header = document.createElement('label');
       this.header.textContent = this.getTitle();
       this.title = this.theme.getHeader(this.header);
       this.container.appendChild(this.title);
@@ -163,7 +185,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
         this.item_title = 'item';
       }
     }
-    return this.item_title;
+    return this.cleanText(this.item_title);
   },
   getItemSchema: function(i) {
     if(Array.isArray(this.schema.items)) {
@@ -348,9 +370,11 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
         self.rows[i].container.style.display = '';
         if(self.rows[i].tab) self.rows[i].tab.style.display = '';
         self.rows[i].register();
+        self.jsoneditor.trigger('addRow', self.rows[i]);
       }
       else {
-        self.addRow(val,initial);
+        var editor = self.addRow(val,initial);
+        self.jsoneditor.trigger('addRow', editor);
       }
     });
 
@@ -525,7 +549,8 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
           }
         });
 
-        self.empty(true);
+        var editor = self.rows[i];
+
         self.setValue(newval);
 
         if (self.rows[i]) {
@@ -540,7 +565,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
         }
 
         self.onChange(true);
-        self.jsoneditor.trigger('deleteRow');
+        self.jsoneditor.trigger('deleteRow', editor);
       });
 
       if(controls_holder) {
@@ -548,30 +573,29 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       }
     }
 
-	//Button to copy an array element and add it as last element
-	if(self.show_copy_button){
-        self.rows[i].copy_button = this.getButton(self.getItemTitle(),'copy','Copy '+self.getItemTitle());
-        self.rows[i].copy_button.classList.add('copy', 'json-editor-btntype-copy');
-        self.rows[i].copy_button.setAttribute('data-i',i);
-        self.rows[i].copy_button.addEventListener('click',function(e) {
-            var value = self.getValue();
-            e.preventDefault();
-            e.stopPropagation();
-            var i = this.getAttribute('data-i')*1;
+	  //Button to copy an array element and add it as last element
+    if(self.show_copy_button){
+      self.rows[i].copy_button = this.getButton(self.getItemTitle(),'copy','Copy '+self.getItemTitle());
+      self.rows[i].copy_button.classList.add('copy', 'json-editor-btntype-copy');
+      self.rows[i].copy_button.setAttribute('data-i',i);
+      self.rows[i].copy_button.addEventListener('click',function(e) {
+          var value = self.getValue();
+          e.preventDefault();
+          e.stopPropagation();
+          var i = this.getAttribute('data-i')*1;
 
-            $each(value,function(j,row) {
-              if(j===i) {
-                value.push(row);
-              }
-            });
+          $each(value,function(j,row) {
+            if(j===i) {
+              value.push(row);
+            }
+          });
 
-            self.setValue(value);
-            self.refreshValue(true);
-            self.onChange(true);
+          self.setValue(value);
+          self.refreshValue(true);
+          self.onChange(true);
+      });
 
-        });
-
-        controls_holder.appendChild(self.rows[i].copy_button);
+      controls_holder.appendChild(self.rows[i].copy_button);
     }
 
 
@@ -596,7 +620,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
 
         self.onChange(true);
 
-        self.jsoneditor.trigger('moveRow');
+        self.jsoneditor.trigger('moveRow', self.rows[i-1]);
       });
 
       if(controls_holder) {
@@ -624,7 +648,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
         self.refreshTabs();
         self.onChange(true);
 
-        self.jsoneditor.trigger('moveRow');
+        self.jsoneditor.trigger('moveRow', self.rows[i+1]);
       });
 
       if(controls_holder) {
@@ -634,6 +658,8 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
 
     if(value) self.rows[i].setValue(value, initial);
     self.refreshTabs();
+
+    return self.rows[i];
   },
   addControls: function() {
     var self = this;
@@ -685,21 +711,22 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       e.preventDefault();
       e.stopPropagation();
       var i = self.rows.length;
+      var editor;
       if(self.row_cache[i]) {
-        self.rows[i] = self.row_cache[i];
+        editor = self.rows[i] = self.row_cache[i];
         self.rows[i].setValue(self.rows[i].getDefault(), true);
         self.rows[i].container.style.display = '';
         if(self.rows[i].tab) self.rows[i].tab.style.display = '';
         self.rows[i].register();
       }
       else {
-        self.addRow();
+        editor = self.addRow();
       }
       self.active_tab = self.rows[i].tab;
       self.refreshTabs();
       self.refreshValue();
       self.onChange(true);
-      self.jsoneditor.trigger('addRow');
+      self.jsoneditor.trigger('addRow', editor);
     });
     self.controls.appendChild(this.add_row_button);
 
@@ -716,8 +743,8 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       var rows = self.getValue();
       var new_active_tab = null;
 
-      rows.pop();
-      self.empty(true);
+      var editor = rows.pop();
+
       self.setValue(rows);
 
       if (self.rows[self.rows.length-1]) {
@@ -730,7 +757,7 @@ JSONEditor.defaults.editors.array = JSONEditor.AbstractEditor.extend({
       }
 
       self.onChange(true);
-      self.jsoneditor.trigger('deleteRow');
+      self.jsoneditor.trigger('deleteRow', editor);
     });
     self.controls.appendChild(this.delete_last_row_button);
 
