@@ -5,6 +5,24 @@ JSONEditor.Validator = Class.extend({
     this.options = options || {};
     this.translate = this.jsoneditor.translate || JSONEditor.defaults.translate;
   },
+  fitTest: function(value) {
+    var matchedProperties = 0;
+    var extraProperties = 0;
+    if (typeof value === "object" && value !== null) {
+      // Work on a copy of the schema
+      var schema = $extend({},this.jsoneditor.expandRefs(this.schema));
+      for (var i in schema.properties) {
+        if (!schema.properties.hasOwnProperty(i)) {
+          extraProperties++;
+          continue;
+        }
+        if (typeof value[i] !== "undefined") {
+          matchedProperties++;
+        }
+      }
+    }
+    return {match: matchedProperties, extra: extraProperties};
+  },
   validate: function(value) {
     return this._validateSchema(this.schema, value);
   },
@@ -32,7 +50,7 @@ JSONEditor.Validator = Class.extend({
           message: this.translate("error_notset")
         });
       }
-      
+
       return errors;
     }
 
@@ -313,7 +331,7 @@ JSONEditor.Validator = Class.extend({
           errors.push({
             path: path,
             property: 'pattern',
-            message: this.translate('error_pattern', [schema.pattern])
+            message: (schema.options && schema.options.patternmessage) ? schema.options.patternmessage : this.translate('error_pattern', [schema.pattern])
           });
         }
       }
@@ -536,7 +554,7 @@ JSONEditor.Validator = Class.extend({
 
     if (schema.links) {
       for (var m = 0; m < schema.links.length; m++) {
-        if (schema.links[m].rel.toLowerCase() === "describedby") {
+        if (schema.links[m].rel && schema.links[m].rel.toLowerCase() === "describedby") {
           var href = schema.links[m].href;
           var data = this.jsoneditor.root.getValue();
           //var template = new UriTemplate(href); //preprocessURI(href));
@@ -631,6 +649,10 @@ JSONEditor.Validator = Class.extend({
         }
       }
     }
+
+    // Internal validators using the custom validator format
+    errors = errors.concat(ipValidator.validate.call(self,schema,value,path));
+
     // Custom type validation (global)
     $each(JSONEditor.defaults.custom_validators,function(i,validator) {
       errors = errors.concat(validator.call(self,schema,value,path));
